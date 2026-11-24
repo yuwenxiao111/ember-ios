@@ -1,0 +1,28 @@
+name: Build Ember IPA
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: unzip -o -q ember-src.zip -d .
+      - name: Build archive
+        run: |
+          cd EmberIOS
+          xcodebuild -project Ember.xcodeproj -scheme Ember -configuration Release -sdk iphoneos -destination "generic/platform=iOS" -archivePath build/Ember.xcarchive archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Pack IPA
+        run: |
+          mkdir -p out/Payload
+          cp -R EmberIOS/build/Ember.xcarchive/Products/Applications/Ember.app out/Payload/
+          cd out
+          zip -qry Ember.ipa Payload
+          ls -lh Ember.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ember-unsigned-ipa
+          path: out/Ember.ipa
